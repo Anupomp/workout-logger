@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./components/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import LogWorkout from "./pages/LogWorkout";
+import WorkoutDetail from "./pages/WorkoutDetail";
 import Coach from "./pages/Coach";
 
 function ProtectedRoute({ children }) {
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/log" element={<ProtectedRoute><LogWorkout /></ProtectedRoute>} />
+          <Route path="/workout/:id" element={<ProtectedRoute><WorkoutDetail /></ProtectedRoute>} />
           <Route path="/coach" element={<ProtectedRoute><Coach /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

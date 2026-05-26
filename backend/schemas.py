@@ -114,3 +114,12 @@ class CoachRequest(BaseModel):
 class CoachResponse(BaseModel):
     plan: str
     generated_at: datetime
+
+
+# ── Workout Update ─────────────────────────────────────────────────────────────
+
+class WorkoutUpdate(BaseModel):
+    name: Optional[str] = None
+    notes: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    sets: List[SetCreate] = []

@@ -84,7 +84,7 @@ class PersonalRecord(Base):
     weight_lbs = Column(Float, nullable=False)
     reps = Column(Integer, nullable=False)
     achieved_at = Column(DateTime(timezone=True), server_default=func.now())
-    workout_set_id = Column(Integer, ForeignKey("workout_sets.id"), nullable=True)
+    workout_set_id = Column(Integer, ForeignKey("workout_sets.id", ondelete="SET NULL"), nullable=True)
 
     user = relationship("User", back_populates="personal_records")
     exercise = relationship("Exercise", back_populates="personal_records")
