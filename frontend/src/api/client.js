@@ -11,11 +11,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-logout on 401
+// Auto-logout on 401 — but only when NOT on the login page
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 && !window.location.pathname.includes("/login")) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }

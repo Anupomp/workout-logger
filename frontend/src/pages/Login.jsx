@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, register } from "../api/client";
+import { login, register, getMe } from "../api/client";
 import { useAuth } from "../components/AuthContext";
 
 export default function LoginPage() {
@@ -14,6 +14,11 @@ export default function LoginPage() {
   const update = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async () => {
+    // Client-side validation
+    if (!form.username.trim()) { setError("Username is required."); return; }
+    if (!form.password.trim()) { setError("Password is required."); return; }
+    if (mode === "register" && !form.email.trim()) { setError("Email is required."); return; }
+
     setError("");
     setLoading(true);
     try {
@@ -25,12 +30,16 @@ export default function LoginPage() {
         const res = await login(form.username, form.password);
         localStorage.setItem("token", res.data.access_token);
       }
-      const { getMe } = await import("../api/client");
       const me = await getMe();
       setUser(me.data);
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.detail || "Something went wrong");
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail.map((d) => d.msg).join(", "));
+      } else {
+        setError(detail || "Incorrect username or password.");
+      }
     } finally {
       setLoading(false);
     }
@@ -61,15 +70,19 @@ export default function LoginPage() {
           <input name="password" type="password" value={form.password} onChange={update} placeholder="••••••••" style={inputStyle} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} />
         </div>
 
-        {error && <p style={{ color: "var(--color-text-danger)", fontSize: 13, marginBottom: "1rem" }}>{error}</p>}
+        {error && (
+          <div style={{ background: "var(--color-background-error, #fef2f2)", border: "1px solid var(--color-border-error, #fecaca)", borderRadius: 8, padding: "0.6rem 0.75rem", marginBottom: "1rem" }}>
+            <p style={{ color: "var(--color-text-danger, #dc2626)", fontSize: 13, margin: 0 }}>{error}</p>
+          </div>
+        )}
 
-        <button onClick={handleSubmit} disabled={loading} style={btnStyle}>
+        <button onClick={handleSubmit} disabled={loading} style={{ ...btnStyle, opacity: loading ? 0.7 : 1 }}>
           {loading ? "Loading..." : mode === "login" ? "Sign in" : "Create account"}
         </button>
 
         <p style={{ textAlign: "center", marginTop: "1.25rem", fontSize: 13, color: "var(--color-text-secondary)" }}>
           {mode === "login" ? "Don't have an account? " : "Already have one? "}
-          <span onClick={() => setMode(mode === "login" ? "register" : "login")} style={{ color: "var(--color-text-info)", cursor: "pointer" }}>
+          <span onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }} style={{ color: "var(--color-text-info)", cursor: "pointer" }}>
             {mode === "login" ? "Register" : "Sign in"}
           </span>
         </p>
