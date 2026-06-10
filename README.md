@@ -4,7 +4,7 @@
 
 **Log your lifts. Track your PRs. Get a training plan built from your actual data.**
 
-A full-stack fitness app where the AI coach reads your real workout history — not a generic template.
+A full-stack fitness app where the AI coach reads your real workout history, not a generic template.
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)
@@ -20,35 +20,35 @@ A full-stack fitness app where the AI coach reads your real workout history — 
 
 | | |
 |---|---|
-| 🏋️ **Smart workout logging** | Each exercise only shows the metrics it actually tracks — lifts log weight × reps, cardio logs time, planks log duration, ab wheel logs reps. No "185 lbs plank" nonsense. |
-| 🏆 **Automatic PR detection** | Personal records are flagged the moment you log a new max — no manual tracking. |
-| 📈 **Progress charts** | Top-set weight and estimated 1RM (Epley formula) graphed over time for any exercise. |
-| 🤖 **AI Coach (BYOK)** | Generates a weekly plan from your last 10 sessions. Works with **OpenAI, Anthropic Claude, or Google Gemini** — you bring your own API key, nothing is stored server-side. |
-| 🛠️ **Custom exercises** | Create your own with configurable metrics (weight / reps / time / RPE), private to your account. |
-| 🗓️ **Searchable history** | Every session, grouped by month, with full detail view and in-place editing. |
+| 🏋️ **Smart workout logging** | Each exercise only shows the metrics it actually tracks. Lifts log weight and reps, cardio logs time, planks log duration, ab wheel logs reps. No "185 lbs plank" nonsense. |
+| 🏆 **Automatic PR detection** | Personal records are flagged the moment you log a new max, with no manual tracking. |
+| 📈 **Progress charts** | Top set weight and estimated 1RM (Epley formula) graphed over time for any exercise. |
+| 🤖 **AI Coach (BYOK)** | Generates a weekly plan from your last 10 sessions. Works with **OpenAI, Anthropic Claude, or Google Gemini**. You bring your own API key and nothing is stored server side. |
+| 🛠️ **Custom exercises** | Create your own with configurable metrics (weight, reps, time, RPE), private to your account. |
+| 🗓️ **Searchable history** | Every session, grouped by month, with full detail view and in place editing. |
 | 🌗 **Dark mode** | Automatic via `prefers-color-scheme`. |
-| 🔐 **JWT auth** | Register/login with bcrypt-hashed passwords. |
+| 🔐 **JWT auth** | Register and login with bcrypt hashed passwords. |
 
 ## 🧠 Design decisions
 
-**Bring-your-own-key AI.** No API keys live on the server. Users pick a provider and paste their key in the UI; it's sent with the single request, used once, and never stored or logged. Optionally remembered in the user's own browser (localStorage, opt-in). Provider error bodies are never echoed back — they can contain key fragments.
+**Bring your own key AI.** No API keys live on the server. Users pick a provider and paste their key in the UI. The key is sent with the single request, used once, and never stored or logged. It can optionally be remembered in the user's own browser (localStorage, opt in). Provider error bodies are never echoed back since they can contain key fragments.
 
 **Consistent output across three different LLMs.** Three layers keep coaching plans stable no matter which model a user picks:
 
-1. **Pinned model snapshots** (`gpt-4o-2024-08-06`, `claude-sonnet-4-20250514`, `gemini-2.5-flash`) — not floating aliases, so provider updates can't silently change behavior
-2. **Low temperature (0.3)** — the same history produces near-identical plans run to run
-3. **Forced output template** — the prompt specifies an exact markdown skeleton (Weekly Split / Day-by-Day Plan / Insights / Overload Tip), so every provider returns the same structure
+1. **Pinned model snapshots** (`gpt-4o-2024-08-06`, `claude-sonnet-4-20250514`, `gemini-2.5-flash`) rather than floating aliases, so provider updates cannot silently change behavior
+2. **Low temperature (0.3)** so the same history produces near identical plans run to run
+3. **Forced output template** where the prompt specifies an exact markdown skeleton (Weekly Split / Day-by-Day Plan / Insights / Overload Tip), so every provider returns the same structure
 
-> Fun production bug: Gemini 2.5 is a "thinking" model whose reasoning tokens count against `maxOutputTokens` — plans were getting cut off mid-sentence until thinking was disabled via `thinkingBudget: 0`.
+> Fun production bug: Gemini 2.5 is a "thinking" model whose reasoning tokens count against `maxOutputTokens`. Plans were getting cut off mid sentence until thinking was disabled via `thinkingBudget: 0`.
 
-**Per-exercise metric flags.** Every exercise carries `tracks_weight / tracks_reps / tracks_time / tracks_rpe` booleans that drive the logging UI, the detail view columns, and PR eligibility. Validation enforces sane combos (weight tracking requires reps, for PR detection).
+**Per exercise metric flags.** Every exercise carries `tracks_weight / tracks_reps / tracks_time / tracks_rpe` booleans that drive the logging UI, the detail view columns, and PR eligibility. Validation enforces sane combos (weight tracking requires reps, for PR detection).
 
 ## 🚀 Quick start
 
 ```bash
 git clone https://github.com/Anupomp/workout-logger.git
 cd workout-logger
-cp backend/.env.example backend/.env   # set a SECRET_KEY — no AI keys needed
+cp backend/.env.example backend/.env   # set a SECRET_KEY, no AI keys needed
 docker-compose up --build
 ```
 
@@ -98,10 +98,10 @@ workout-logger/
 │   ├── auth.py            # JWT + bcrypt
 │   ├── ai_coach.py        # Pluggable provider layer (pinned models, templated prompt)
 │   └── routers/
-│       ├── auth.py        # /auth — register, login, me
-│       ├── exercises.py   # /exercises — library, search, custom CRUD
-│       ├── workouts.py    # /workouts — CRUD, PR detection, progress data
-│       └── coach.py       # /coach — AI plan generation
+│       ├── auth.py        # /auth (register, login, me)
+│       ├── exercises.py   # /exercises (library, search, custom CRUD)
+│       ├── workouts.py    # /workouts (CRUD, PR detection, progress data)
+│       └── coach.py       # /coach (AI plan generation)
 └── frontend/src/
     ├── index.css          # Design tokens (light/dark)
     ├── api/client.js      # Axios instance + endpoints
@@ -117,7 +117,7 @@ workout-logger/
 | `POST` | `/auth/register` | Create account |
 | `POST` | `/auth/login` | Get JWT token |
 | `GET` | `/auth/me` | Current user |
-| `GET` | `/exercises/` | List exercises (built-in + your customs, filterable) |
+| `GET` | `/exercises/` | List exercises (built in + your customs, filterable) |
 | `POST` | `/exercises/` | Create custom exercise |
 | `DELETE` | `/exercises/{id}` | Delete your custom exercise |
 | `POST` | `/workouts/` | Log a workout (auto PR detection) |
@@ -136,8 +136,8 @@ Full interactive docs at `/docs` (Swagger) when running.
 - [ ] pytest suite for routers + PR detection logic
 - [ ] GitHub Actions CI (lint + tests on push)
 - [ ] Deploy (Render/Railway + managed Postgres)
-- [ ] Rest-timer and supersets in the logging UI
-- [ ] Body-weight tracking with trend chart
+- [ ] Rest timer and supersets in the logging UI
+- [ ] Body weight tracking with trend chart
 
 ## 🛠️ Stack
 
@@ -146,7 +146,7 @@ Full interactive docs at `/docs` (Swagger) when running.
 | Frontend | React 18, React Router, Axios, Recharts, Vite |
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2 |
 | Database | PostgreSQL 16 |
-| AI | OpenAI GPT-4o · Anthropic Claude · Google Gemini (bring-your-own-key) |
+| AI | OpenAI GPT-4o · Anthropic Claude · Google Gemini (bring your own key) |
 | Auth | JWT (python-jose) + bcrypt |
 | Dev | Docker Compose |
 
