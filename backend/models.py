@@ -41,6 +41,15 @@ class Exercise(Base):
     is_compound = Column(Boolean, default=False)
     instructions = Column(Text, nullable=True)
 
+    # Which metrics this exercise logs (drives the UI form)
+    tracks_weight = Column(Boolean, default=True, nullable=False)
+    tracks_reps = Column(Boolean, default=True, nullable=False)
+    tracks_time = Column(Boolean, default=False, nullable=False)
+    tracks_rpe = Column(Boolean, default=True, nullable=False)
+
+    # NULL = built-in library exercise; set = user-created custom exercise
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
     sets = relationship("WorkoutSet", back_populates="exercise")
     personal_records = relationship("PersonalRecord", back_populates="exercise")
 
@@ -68,6 +77,7 @@ class WorkoutSet(Base):
     set_number = Column(Integer, nullable=False)
     reps = Column(Integer, nullable=True)
     weight_lbs = Column(Float, nullable=True)        # None = bodyweight
+    duration_seconds = Column(Integer, nullable=True)  # for time-based exercises (cardio, planks)
     rpe = Column(Float, nullable=True)               # Rate of Perceived Exertion (1-10)
     notes = Column(String, nullable=True)
 

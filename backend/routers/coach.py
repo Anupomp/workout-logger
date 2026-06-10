@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-from datetime import datetime
+from datetime import datetime, timezone
 
 from db import get_db
 from models import User, Workout, WorkoutSet
@@ -47,6 +47,7 @@ async def generate_plan(
                     "set": s.set_number,
                     "reps": s.reps,
                     "weight_lbs": s.weight_lbs,
+                    "duration_seconds": s.duration_seconds,
                     "rpe": s.rpe,
                 }
                 for s in sorted(w.sets, key=lambda x: (x.set_number,))
@@ -54,6 +55,15 @@ async def generate_plan(
         })
 
     prompt = build_prompt(history, req.goal, req.days_per_week, req.additional_notes)
-    plan = await get_ai_coaching(prompt)
+    try:
+        plan = await get_ai_coaching(prompt, provider=req.provider, api_key=req.api_key)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        # Never echo provider error bodies — they can contain key fragments.
+        raise HTTPException(
+            status_code=502,
+            detail="AI provider request failed. Check that your API key is valid and has credit.",
+        )
 
-    return CoachResponse(plan=plan, generated_at=datetime.utcnow())
+    return CoachResponse(plan=plan, generated_at=datetime.now(timezone.utc))

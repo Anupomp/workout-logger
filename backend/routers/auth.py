@@ -5,7 +5,6 @@ from auth import hash_password, verify_password, create_access_token, get_curren
 from db import get_db
 from models import User
 from schemas import UserCreate, UserOut, Token
-from auth import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

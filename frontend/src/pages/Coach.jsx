@@ -3,19 +3,46 @@ import { generatePlan } from "../api/client";
 
 const GOALS = ["Build strength", "Lose fat", "Improve endurance", "Build muscle", "Improve athleticism"];
 
+const PROVIDERS = [
+  { id: "anthropic", label: "Anthropic (Claude)", placeholder: "sk-ant-...", keyUrl: "console.anthropic.com" },
+  { id: "openai", label: "OpenAI (GPT-4o)", placeholder: "sk-...", keyUrl: "platform.openai.com" },
+  { id: "gemini", label: "Google (Gemini)", placeholder: "AIza...", keyUrl: "aistudio.google.com" },
+];
+
 export default function Coach() {
   const [goal, setGoal] = useState("");
   const [days, setDays] = useState(4);
   const [extraNotes, setExtraNotes] = useState("");
+  const [provider, setProvider] = useState(localStorage.getItem("ai_provider") || "anthropic");
+  const [apiKey, setApiKey] = useState(localStorage.getItem("ai_api_key") || "");
+  const [rememberKey, setRememberKey] = useState(!!localStorage.getItem("ai_api_key"));
   const [plan, setPlan] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const selectedProvider = PROVIDERS.find((p) => p.id === provider) || PROVIDERS[0];
+
   const handleGenerate = async () => {
     if (!goal) { setError("Please select a goal."); return; }
+    if (!apiKey.trim()) { setError("Paste your API key to generate a plan."); return; }
+
+    if (rememberKey) {
+      localStorage.setItem("ai_api_key", apiKey.trim());
+      localStorage.setItem("ai_provider", provider);
+    } else {
+      localStorage.removeItem("ai_api_key");
+      localStorage.removeItem("ai_provider");
+    }
+
     setLoading(true); setError(""); setPlan("");
     try {
-      const res = await generatePlan({ goal, days_per_week: days, additional_notes: extraNotes || null });
+      const res = await generatePlan({
+        goal,
+        days_per_week: days,
+        additional_notes: extraNotes || null,
+        provider,
+        api_key: apiKey.trim(),
+      });
       setPlan(res.data.plan);
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to generate plan. Make sure you have logged at least one workout.");
@@ -57,6 +84,30 @@ export default function Coach() {
             }}>{d}</button>
           ))}
         </div>
+
+        <label style={labelStyle}>AI provider & your API key</label>
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.4rem" }}>
+          <select value={provider} onChange={(e) => setProvider(e.target.value)} style={{ ...inputStyle, width: 180, flexShrink: 0 }}>
+            {PROVIDERS.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={selectedProvider.placeholder}
+            style={inputStyle}
+            autoComplete="off"
+          />
+        </div>
+        <p style={{ margin: "0 0 0.5rem", fontSize: 11, color: "var(--color-text-secondary)" }}>
+          Get a key at {selectedProvider.keyUrl}. Your key is sent only with this request and never stored on the server.
+        </p>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--color-text-secondary)", marginBottom: "1.25rem", cursor: "pointer" }}>
+          <input type="checkbox" checked={rememberKey} onChange={(e) => setRememberKey(e.target.checked)} />
+          Remember key in this browser only
+        </label>
 
         <label style={labelStyle}>Any other notes? (injuries, equipment limits, etc.)</label>
         <textarea value={extraNotes} onChange={(e) => setExtraNotes(e.target.value)} rows={2} placeholder="e.g. No overhead pressing due to shoulder pain" style={{ ...inputStyle, resize: "vertical", marginBottom: "1.25rem" }} />

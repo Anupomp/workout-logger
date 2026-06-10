@@ -9,6 +9,11 @@ services:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d workout_logger"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   backend:
     build: ./backend
@@ -16,8 +21,13 @@ services:
     ports:
       - "8000:8000"
     env_file: ./backend/.env
+    environment:
+      # Inside the compose network, Postgres is reachable at "db", not localhost.
+      # This overrides whatever DATABASE_URL is in backend/.env.
+      DATABASE_URL: postgresql://postgres:password@db:5432/workout_logger
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - ./backend:/app
 

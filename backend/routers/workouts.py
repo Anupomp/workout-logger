@@ -4,7 +4,7 @@ from typing import List
 
 from db import get_db
 from models import User, Workout, WorkoutSet, PersonalRecord
-from schemas import WorkoutCreate, WorkoutUpdate, WorkoutOut, WorkoutSummary, PROut
+from schemas import WorkoutCreate, WorkoutUpdate, WorkoutOut, WorkoutSummary, PROut, ProgressPoint
 from auth import get_current_user
 
 router = APIRouter(prefix="/workouts", tags=["workouts"])
@@ -58,6 +58,7 @@ def create_workout(
             set_number=s.set_number,
             reps=s.reps,
             weight_lbs=s.weight_lbs,
+            duration_seconds=s.duration_seconds,
             rpe=s.rpe,
             notes=s.notes,
         )
@@ -85,6 +86,47 @@ def get_personal_records(
         .order_by(PersonalRecord.achieved_at.desc())
         .all()
     )
+
+
+@router.get("/progress/{exercise_id}", response_model=List[ProgressPoint])
+def get_exercise_progress(
+    exercise_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Top set per workout for one exercise — powers the progress chart."""
+    workouts = (
+        db.query(Workout)
+        .join(WorkoutSet, WorkoutSet.workout_id == Workout.id)
+        .filter(
+            Workout.user_id == current_user.id,
+            WorkoutSet.exercise_id == exercise_id,
+            WorkoutSet.weight_lbs.isnot(None),
+            WorkoutSet.reps.isnot(None),
+        )
+        .order_by(Workout.date.asc())
+        .distinct()
+        .all()
+    )
+
+    points = []
+    for w in workouts:
+        relevant = [
+            s for s in w.sets
+            if s.exercise_id == exercise_id and s.weight_lbs is not None and s.reps is not None
+        ]
+        if not relevant:
+            continue
+        top = max(relevant, key=lambda s: s.weight_lbs)
+        # Epley formula for estimated one-rep max
+        est_1rm = round(top.weight_lbs * (1 + top.reps / 30), 1)
+        points.append(ProgressPoint(
+            date=w.date,
+            top_weight_lbs=top.weight_lbs,
+            reps=top.reps,
+            estimated_1rm=est_1rm,
+        ))
+    return points
 
 
 @router.get("/", response_model=List[WorkoutSummary])
@@ -161,6 +203,7 @@ def update_workout(
             set_number=s.set_number,
             reps=s.reps,
             weight_lbs=s.weight_lbs,
+            duration_seconds=s.duration_seconds,
             rpe=s.rpe,
             notes=s.notes,
         )

@@ -1,6 +1,13 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getWorkout, updateWorkout, deleteWorkout, getExercises } from "../api/client";
+
+function formatTime(seconds) {
+  if (seconds == null) return "\u2014";
+  const m = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return sec === 0 ? `${m} min` : `${m}:${String(sec).padStart(2, "0")} min`;
+}
 
 export default function WorkoutDetail() {
   const { id } = useParams();
@@ -37,7 +44,7 @@ export default function WorkoutDetail() {
     setEditDuration(workout.duration_minutes || "");
     setEditNotes(workout.notes || "");
     setEditSets(
-      workout.sets
+      [...workout.sets]
         .sort((a, b) => a.set_number - b.set_number)
         .map((s) => ({
           exercise: s.exercise,
@@ -45,6 +52,7 @@ export default function WorkoutDetail() {
           set_number: s.set_number,
           reps: s.reps ?? "",
           weight_lbs: s.weight_lbs ?? "",
+          time_min: s.duration_seconds != null ? s.duration_seconds / 60 : "",
           rpe: s.rpe ?? "",
         }))
     );
@@ -58,7 +66,7 @@ export default function WorkoutDetail() {
         exercise,
         exercise_id: exercise.id,
         set_number: prev.filter((s) => s.exercise_id === exercise.id).length + 1,
-        reps: "", weight_lbs: "", rpe: "",
+        reps: "", weight_lbs: "", time_min: "", rpe: "",
       },
     ]);
   };
@@ -81,6 +89,7 @@ export default function WorkoutDetail() {
           set_number: s.set_number,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
           weight_lbs: s.weight_lbs !== "" ? parseFloat(s.weight_lbs) : null,
+          duration_seconds: s.time_min !== "" ? Math.round(parseFloat(s.time_min) * 60) : null,
           rpe: s.rpe !== "" ? parseFloat(s.rpe) : null,
         })),
       };
@@ -170,13 +179,13 @@ export default function WorkoutDetail() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr 1fr", gap: "0.4rem", fontSize: 12 }}>
                 {["Set", "Weight", "Reps", "RPE"].map((h) => <span key={h} style={{ color: "var(--color-text-secondary)" }}>{h}</span>)}
-                {sets.sort((a, b) => a.set_number - b.set_number).map((s) => (
-                  <>
-                    <span key={`n-${s.id}`} style={{ fontWeight: 500 }}>#{s.set_number}</span>
-                    <span key={`w-${s.id}`}>{s.weight_lbs != null ? `${s.weight_lbs} lbs` : "BW"}</span>
-                    <span key={`r-${s.id}`}>{s.reps ?? "—"}</span>
-                    <span key={`rpe-${s.id}`}>{s.rpe ?? "—"}</span>
-                  </>
+                {[...sets].sort((a, b) => a.set_number - b.set_number).map((s) => (
+                  <Fragment key={s.id}>
+                    <span style={{ fontWeight: 500 }}>#{s.set_number}</span>
+                    <span>{s.weight_lbs != null ? `${s.weight_lbs} lbs` : "BW"}</span>
+                    <span>{s.reps ?? "—"}</span>
+                    <span>{s.rpe ?? "—"}</span>
+                  </Fragment>
                 ))}
               </div>
             </div>
@@ -235,13 +244,14 @@ export default function WorkoutDetail() {
             <p style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>No sets yet. Add an exercise on the left.</p>
           ) : (
             editSets.map((s, idx) => (
-              <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 65px 65px 55px 24px", gap: "0.35rem", alignItems: "center", marginBottom: "0.45rem" }}>
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div key={idx} style={{ display: "flex", gap: "0.35rem", alignItems: "center", marginBottom: "0.45rem" }}>
+                <p style={{ flex: 1, margin: 0, fontSize: 11, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {s.exercise.name} <span style={{ color: "var(--color-text-secondary)", fontWeight: 400 }}>#{s.set_number}</span>
                 </p>
-                <input type="number" placeholder="lbs" value={s.weight_lbs} onChange={(e) => updateSet(idx, "weight_lbs", e.target.value)} style={miniInput} />
-                <input type="number" placeholder="Reps" value={s.reps} onChange={(e) => updateSet(idx, "reps", e.target.value)} style={miniInput} />
-                <input type="number" placeholder="RPE" step="0.5" min="1" max="10" value={s.rpe} onChange={(e) => updateSet(idx, "rpe", e.target.value)} style={miniInput} />
+                {s.exercise.tracks_weight && <input type="number" placeholder="lbs" value={s.weight_lbs} onChange={(e) => updateSet(idx, "weight_lbs", e.target.value)} style={{ ...miniInput, width: 65 }} />}
+                {s.exercise.tracks_reps && <input type="number" placeholder="Reps" value={s.reps} onChange={(e) => updateSet(idx, "reps", e.target.value)} style={{ ...miniInput, width: 65 }} />}
+                {s.exercise.tracks_time && <input type="number" placeholder="Min" step="0.5" min="0" value={s.time_min} onChange={(e) => updateSet(idx, "time_min", e.target.value)} style={{ ...miniInput, width: 60 }} />}
+                {s.exercise.tracks_rpe && <input type="number" placeholder="RPE" step="0.5" min="1" max="10" value={s.rpe} onChange={(e) => updateSet(idx, "rpe", e.target.value)} style={{ ...miniInput, width: 55 }} />}
                 <button onClick={() => removeSet(idx)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, color: "var(--color-text-danger, #dc2626)", padding: 0 }}>×</button>
               </div>
             ))
@@ -264,6 +274,6 @@ function Shell({ children }) {
 
 const cardStyle = { background: "var(--color-background-secondary)", borderRadius: 12, padding: "1.25rem", border: "1px solid var(--color-border-tertiary)" };
 const inputStyle = { width: "100%", padding: "0.55rem 0.75rem", borderRadius: 8, border: "1px solid var(--color-border-secondary)", background: "var(--color-background-secondary)", fontSize: 13, color: "var(--color-text-primary)", boxSizing: "border-box" };
-const miniInput = { padding: "0.38rem 0.4rem", borderRadius: 6, border: "1px solid var(--color-border-secondary)", background: "var(--color-background-secondary)", fontSize: 12, color: "var(--color-text-primary)", width: "100%", boxSizing: "border-box" };
+const miniInput = { padding: "0.38rem 0.4rem", borderRadius: 6, border: "1px solid var(--color-border-secondary)", background: "var(--color-background-secondary)", fontSize: 12, color: "var(--color-text-primary)", boxSizing: "border-box" };
 const labelStyle = { fontSize: 12, color: "var(--color-text-secondary)", display: "block", marginBottom: 3 };
 const outlineBtn = { padding: "0.45rem 0.9rem", borderRadius: 8, border: "1px solid var(--color-border-secondary)", background: "none", cursor: "pointer", fontSize: 13, color: "var(--color-text-secondary)" };

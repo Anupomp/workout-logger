@@ -4,11 +4,16 @@ A full stack fitness app built with **React**, **FastAPI**, **PostgreSQL**, and 
 
 ## Features
 
-- **Workout logging** — log sessions with exercises, sets, reps, weight, and RPE
+- **Workout logging** — log sessions with sets tracking weight, reps, time, and RPE per exercise
 - **Exercise library** — 35+ pre-seeded exercises across all muscle groups
+- **Custom exercises** — create your own with configurable metrics (weight, reps, time, RPE); private per account
+- **Smart logging forms** — each exercise only shows the inputs it actually tracks (cardio logs time, planks log time, ab wheel logs reps, lifts log weight × reps)
 - **PR auto-detection** — personal records are flagged automatically on every log
-- **AI Coach** — sends your workout history to an LLM and returns a personalized weekly training plan
-- **JWT auth** — register, login, token refresh
+- **AI Coach** — sends your workout history to an LLM and returns a personalized weekly training plan. Bring-your-own-key: works with OpenAI, Anthropic, or Google Gemini; keys are never stored server-side
+- **Progress charts** — top-set weight and estimated 1RM (Epley) graphed over time per exercise
+- **Workout history** — searchable, month-grouped log of every session
+- **Dark mode** — automatic via `prefers-color-scheme`
+- **JWT auth** — register and login with bcrypt-hashed passwords
 
 ## Stack
 
@@ -29,7 +34,7 @@ A full stack fitness app built with **React**, **FastAPI**, **PostgreSQL**, and 
 git clone https://github.com/YOUR_USERNAME/workout-logger.git
 cd workout-logger
 cp backend/.env.example backend/.env
-# Edit backend/.env — add your DB credentials and AI API key
+# Edit backend/.env — set a SECRET_KEY (no AI keys needed; users bring their own)
 ```
 
 ### 2. Run with Docker
@@ -87,6 +92,7 @@ workout-logger/
 └── frontend/
     └── src/
         ├── App.jsx        # Routing + nav
+        ├── index.css      # Design tokens (light/dark) + base styles
         ├── api/client.js  # Axios + all API calls
         ├── components/
         │   └── AuthContext.jsx
@@ -94,6 +100,9 @@ workout-logger/
             ├── Login.jsx
             ├── Dashboard.jsx
             ├── LogWorkout.jsx
+            ├── WorkoutDetail.jsx
+            ├── History.jsx
+            ├── Progress.jsx
             └── Coach.jsx
 ```
 
