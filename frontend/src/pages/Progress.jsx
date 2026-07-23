@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
+import { motion } from "motion/react";
 import { getExercises, getProgress } from "../api/client";
+import { PageShell, PageHeader, Card, Select, Label, EmptyState, StatNumber } from "../components/ui";
 
 export default function Progress() {
   const [exercises, setExercises] = useState([]);
@@ -32,53 +34,29 @@ export default function Progress() {
   const selected = exercises.find((e) => e.id === parseInt(selectedId));
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1rem" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 500, marginBottom: "0.25rem" }}>📈 Progress</h1>
-      <p style={{ color: "var(--color-text-secondary)", fontSize: 14, marginBottom: "2rem" }}>
-        Track your top set and estimated 1RM over time for any exercise.
-      </p>
+    <PageShell>
+      <PageHeader eyebrow="Strength" title="Progress" subtitle="Track your top set and estimated 1RM over time for any exercise." />
 
-      <div style={{ marginBottom: "1.5rem" }}>
-        <label style={{ fontSize: 12, color: "var(--color-text-secondary)", display: "block", marginBottom: 6 }}>
-          Exercise
-        </label>
-        <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          style={{
-            padding: "0.6rem 0.75rem", borderRadius: 8, fontSize: 14, minWidth: 260,
-            border: "1px solid var(--color-border-secondary)",
-            background: "var(--color-background-secondary)",
-            color: "var(--color-text-primary)",
-          }}
-        >
+      <div style={{ marginBottom: "1.75rem" }}>
+        <Label>Exercise</Label>
+        <Select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} style={{ maxWidth: 320 }}>
           <option value="">Select an exercise...</option>
           {exercises.map((ex) => (
             <option key={ex.id} value={ex.id}>{ex.name}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {!selectedId ? (
-        <div style={cardStyle}>
-          <p style={{ color: "var(--color-text-secondary)", fontSize: 14, margin: 0 }}>
-            Pick an exercise above to see your strength curve.
-          </p>
-        </div>
+        <EmptyState>Pick an exercise above to see your strength curve.</EmptyState>
       ) : loading ? (
-        <div style={cardStyle}>
-          <p style={{ color: "var(--color-text-secondary)", fontSize: 14, margin: 0 }}>Loading...</p>
-        </div>
+        <EmptyState>Loading...</EmptyState>
       ) : data.length === 0 ? (
-        <div style={cardStyle}>
-          <p style={{ color: "var(--color-text-secondary)", fontSize: 14, margin: 0 }}>
-            No logged sets with weight for {selected?.name} yet. Log a workout with this exercise to start tracking.
-          </p>
-        </div>
+        <EmptyState>No logged sets with weight for {selected?.name} yet. Log a workout with this exercise to start tracking.</EmptyState>
       ) : (
         <>
-          <div style={{ ...cardStyle, paddingBottom: "0.5rem" }}>
-            <h2 style={{ fontSize: 15, fontWeight: 500, margin: "0 0 1rem" }}>{selected?.name}</h2>
+          <Card style={{ paddingBottom: "0.5rem" }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 1rem" }}>{selected?.name}</h2>
             <ResponsiveContainer width="100%" height={340}>
               <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-tertiary)" />
@@ -89,10 +67,11 @@ export default function Progress() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "var(--color-background-primary)",
+                    background: "var(--color-background-elevated)",
                     border: "1px solid var(--color-border-secondary)",
                     borderRadius: 8, fontSize: 13,
                   }}
+                  labelStyle={{ color: "var(--color-text-primary)" }}
                   formatter={(value, name) => [
                     `${value} lbs`,
                     name === "top_weight_lbs" ? "Top set" : "Est. 1RM",
@@ -102,31 +81,35 @@ export default function Progress() {
                   formatter={(value) => (value === "top_weight_lbs" ? "Top set weight" : "Estimated 1RM")}
                   wrapperStyle={{ fontSize: 13 }}
                 />
-                <Line type="monotone" dataKey="top_weight_lbs" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="estimated_1rm" stroke="#16a34a" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="top_weight_lbs" stroke="#ffc629" strokeWidth={2.5} dot={{ r: 3, fill: "#ffc629" }} />
+                <Line type="monotone" dataKey="estimated_1rm" stroke="#33e894" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3, fill: "#33e894" }} />
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </Card>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginTop: "1.5rem" }}>
             {[
               { label: "Sessions tracked", value: data.length },
-              { label: "Best top set", value: `${Math.max(...data.map((d) => d.top_weight_lbs))} lbs` },
-              { label: "Best est. 1RM", value: `${Math.max(...data.map((d) => d.estimated_1rm))} lbs` },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ ...cardStyle, textAlign: "center" }}>
-                <p style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{value}</p>
-                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-secondary)" }}>{label}</p>
-              </div>
+              { label: "Best top set", value: Math.max(...data.map((d) => d.top_weight_lbs)), suffix: " lbs" },
+              { label: "Best est. 1RM", value: Math.max(...data.map((d) => d.estimated_1rm)), suffix: " lbs" },
+            ].map(({ label, value, suffix = "" }, i) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.06 }}
+              >
+                <Card style={{ textAlign: "center" }}>
+                  <p style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
+                    <StatNumber value={value} suffix={suffix} />
+                  </p>
+                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-secondary)" }}>{label}</p>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }
-
-const cardStyle = {
-  background: "var(--color-background-secondary)", borderRadius: 12,
-  padding: "1.25rem", border: "1px solid var(--color-border-tertiary)",
-};

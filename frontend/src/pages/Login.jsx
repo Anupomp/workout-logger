@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 import { login, register, getMe } from "../api/client";
 import { useAuth } from "../components/AuthContext";
+import { Button, Input, Label } from "../components/ui";
 
 export default function LoginPage() {
   const [mode, setMode] = useState("login");
@@ -46,60 +48,118 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-background-tertiary)" }}>
-      <div style={{ background: "var(--color-background-primary)", borderRadius: 16, padding: "2.5rem", width: "100%", maxWidth: 400, border: "1px solid var(--color-border-tertiary)" }}>
-        <h1 style={{ marginBottom: "0.25rem", fontSize: 22, fontWeight: 500 }}>💪 Workout Logger</h1>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--color-background-tertiary)",
+        backgroundImage:
+          "radial-gradient(ellipse 700px 500px at 50% 0%, rgba(255,198,41,0.09), transparent 60%)",
+        padding: "1.5rem",
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          background: "var(--color-background-primary)",
+          borderRadius: 18,
+          padding: "2.75rem",
+          width: "100%",
+          maxWidth: 400,
+          border: "1px solid var(--color-border-tertiary)",
+          boxShadow: "var(--shadow-card)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: "0.35rem" }}>
+          <span style={{ color: "var(--color-accent)", fontSize: 20, lineHeight: 1 }}>●</span>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 30,
+              letterSpacing: "0.02em",
+              margin: 0,
+            }}
+          >
+            WORKOUT LOG
+          </h1>
+        </div>
         <p style={{ color: "var(--color-text-secondary)", marginBottom: "2rem", fontSize: 14 }}>
-          {mode === "login" ? "Welcome back" : "Create your account"}
+          {mode === "login" ? "Welcome back. Let's lift." : "Create your account and start tracking."}
         </p>
 
-        {mode === "register" && (
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>Email</label>
-            <input name="email" type="email" value={form.email} onChange={update} placeholder="you@example.com" style={inputStyle} />
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {mode === "register" && (
+            <motion.div
+              key="email-field"
+              initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+              animate={{ height: "auto", opacity: 1, marginBottom: "1rem" }}
+              exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <Label>Email</Label>
+              <Input name="email" type="email" value={form.email} onChange={update} placeholder="you@example.com" />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div style={{ marginBottom: "1rem" }}>
-          <label style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>Username</label>
-          <input name="username" value={form.username} onChange={update} placeholder="username" style={inputStyle} />
+          <Label>Username</Label>
+          <Input name="username" value={form.username} onChange={update} placeholder="username" />
         </div>
 
         <div style={{ marginBottom: "1.5rem" }}>
-          <label style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>Password</label>
-          <input name="password" type="password" value={form.password} onChange={update} placeholder="••••••••" style={inputStyle} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} />
+          <Label>Password</Label>
+          <Input
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={update}
+            placeholder="••••••••"
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          />
         </div>
 
-        {error && (
-          <div style={{ background: "var(--color-background-error, #fef2f2)", border: "1px solid var(--color-border-error, #fecaca)", borderRadius: 8, padding: "0.6rem 0.75rem", marginBottom: "1rem" }}>
-            <p style={{ color: "var(--color-text-danger, #dc2626)", fontSize: 13, margin: 0 }}>{error}</p>
-          </div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.18 }}
+              style={{
+                background: "var(--color-background-error)",
+                border: "1px solid var(--color-border-error)",
+                borderRadius: 9,
+                padding: "0.65rem 0.8rem",
+                marginBottom: "1rem",
+                overflow: "hidden",
+              }}
+            >
+              <p style={{ color: "var(--color-text-danger)", fontSize: 13, margin: 0 }}>{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <button onClick={handleSubmit} disabled={loading} style={{ ...btnStyle, opacity: loading ? 0.7 : 1 }}>
+        <Button onClick={handleSubmit} disabled={loading} style={{ width: "100%" }} size="lg">
           {loading ? "Loading..." : mode === "login" ? "Sign in" : "Create account"}
-        </button>
+        </Button>
 
-        <p style={{ textAlign: "center", marginTop: "1.25rem", fontSize: 13, color: "var(--color-text-secondary)" }}>
+        <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: 13, color: "var(--color-text-secondary)" }}>
           {mode === "login" ? "Don't have an account? " : "Already have one? "}
-          <span onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }} style={{ color: "var(--color-text-info)", cursor: "pointer" }}>
+          <span
+            onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
+            style={{ color: "var(--color-accent)", cursor: "pointer", fontWeight: 600 }}
+          >
             {mode === "login" ? "Register" : "Sign in"}
           </span>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
-
-const inputStyle = {
-  display: "block", width: "100%", marginTop: 4, padding: "0.6rem 0.75rem",
-  borderRadius: 8, border: "1px solid var(--color-border-secondary)",
-  background: "var(--color-background-secondary)", fontSize: 14,
-  color: "var(--color-text-primary)", boxSizing: "border-box",
-};
-
-const btnStyle = {
-  width: "100%", padding: "0.75rem", borderRadius: 8, border: "none",
-  background: "var(--color-text-primary)", color: "var(--color-background-primary)",
-  fontWeight: 500, fontSize: 15, cursor: "pointer",
-};

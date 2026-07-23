@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "motion/react";
 import { getWorkouts } from "../api/client";
+import { PageShell, PageHeader, Card, Row, Button, Input, EmptyState, SectionLabel, StatNumber } from "../components/ui";
+import { staggerContainer, staggerItem } from "../lib/motion";
 
 export default function History() {
   const [workouts, setWorkouts] = useState([]);
@@ -26,69 +29,72 @@ export default function History() {
   }, {});
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>Workout history</h1>
-          <p style={{ color: "var(--color-text-secondary)", fontSize: 14, margin: "4px 0 0" }}>
-            {workouts.length} session{workouts.length !== 1 ? "s" : ""} logged
-          </p>
-        </div>
-        <Link to="/log" style={btnStyle}>+ Log workout</Link>
-      </div>
+    <PageShell>
+      <PageHeader
+        eyebrow="Log"
+        title="History"
+        subtitle={
+          <>
+            <StatNumber value={workouts.length} style={{ fontFamily: "inherit", color: "var(--color-text-primary)", fontWeight: 600 }} />{" "}
+            session{workouts.length !== 1 ? "s" : ""} logged
+          </>
+        }
+        action={<Button to="/log">+ Log workout</Button>}
+      />
 
-      <input
+      <Input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search by session name..."
-        style={{ ...inputStyle, marginBottom: "1.5rem" }}
+        style={{ marginBottom: "1.75rem" }}
       />
 
       {loading ? (
         <p style={{ color: "var(--color-text-secondary)" }}>Loading...</p>
       ) : filtered.length === 0 ? (
-        <div style={cardStyle}>
-          <p style={{ color: "var(--color-text-secondary)", fontSize: 14, margin: 0 }}>
-            {workouts.length === 0 ? (
-              <>No workouts yet. <Link to="/log" style={{ color: "var(--color-text-info)" }}>Log your first one</Link>.</>
-            ) : (
-              "No sessions match your search."
-            )}
-          </p>
-        </div>
+        <EmptyState>
+          {workouts.length === 0 ? (
+            <>No workouts yet. <Link to="/log" style={{ color: "var(--color-accent)" }}>Log your first one</Link>.</>
+          ) : (
+            "No sessions match your search."
+          )}
+        </EmptyState>
       ) : (
-        Object.entries(byMonth).map(([month, items]) => (
-          <div key={month} style={{ marginBottom: "1.5rem" }}>
-            <h2 style={{ fontSize: 13, fontWeight: 500, color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>
-              {month}
-            </h2>
-            <div style={cardStyle}>
-              {items.map((w) => (
-                <Link key={w.id} to={`/workout/${w.id}`} style={{ display: "block", textDecoration: "none" }}>
-                  <div style={rowStyle}>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 500, fontSize: 14, color: "var(--color-text-primary)" }}>
-                        {w.name || "Unnamed session"}
-                      </p>
-                      <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-secondary)" }}>
-                        {new Date(w.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                        {" · "}{w.set_count} sets
-                        {w.duration_minutes ? ` · ${w.duration_minutes} min` : ""}
-                      </p>
-                    </div>
-                    <span style={{ color: "var(--color-text-tertiary)", fontSize: 18 }}>›</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+        Object.entries(byMonth).map(([month, items], groupIdx) => (
+          <motion.div
+            key={month}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: groupIdx * 0.05 }}
+            style={{ marginBottom: "1.75rem" }}
+          >
+            <SectionLabel>{month}</SectionLabel>
+            <Card style={{ padding: "0 1.25rem" }}>
+              <motion.div initial="hidden" animate="show" variants={staggerContainer.variants}>
+                {items.map((w) => (
+                  <motion.div key={w.id} variants={staggerItem.variants}>
+                    <Link to={`/workout/${w.id}`} style={{ display: "block", textDecoration: "none" }}>
+                      <Row>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: "var(--color-text-primary)" }}>
+                            {w.name || "Unnamed session"}
+                          </p>
+                          <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-secondary)" }}>
+                            {new Date(w.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                            {" · "}{w.set_count} sets
+                            {w.duration_minutes ? ` · ${w.duration_minutes} min` : ""}
+                          </p>
+                        </div>
+                        <span style={{ color: "var(--color-text-tertiary)", fontSize: 18 }}>›</span>
+                      </Row>
+                    </Link>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </Card>
+          </motion.div>
         ))
       )}
-    </div>
+    </PageShell>
   );
 }
-
-const cardStyle = { background: "var(--color-background-secondary)", borderRadius: 12, padding: "0.5rem 1.25rem", border: "1px solid var(--color-border-tertiary)" };
-const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 0", borderBottom: "1px solid var(--color-border-tertiary)" };
-const inputStyle = { width: "100%", padding: "0.6rem 0.75rem", borderRadius: 8, border: "1px solid var(--color-border-secondary)", background: "var(--color-background-secondary)", fontSize: 14, color: "var(--color-text-primary)", boxSizing: "border-box" };
-const btnStyle = { padding: "0.5rem 1rem", borderRadius: 8, border: "none", background: "var(--color-text-primary)", color: "var(--color-background-primary)", fontWeight: 500, fontSize: 13, cursor: "pointer", textDecoration: "none", display: "inline-block" };
